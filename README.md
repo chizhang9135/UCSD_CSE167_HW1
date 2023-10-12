@@ -13,7 +13,7 @@
 6. for 1-4 line and curve extra credit, run the code with `.balboa -animation dir"
    - e.g. `./balboa -animation ../sun`
    - e.g. `./balboa -animation ../piggy`
-   - etc
+   - e.g. `./balboa -animation ../transformation_2`
 7. for 1-7, my own scene is under `scenes/hw1/hw_1_7.json` directory, as `hw_1_7.json`. The generated image is under `output` directory as `hw_1_7.png`. If you want to run yourself, using the command:
 ```shell
 ./balboa -hw 1_7 ../scenes/hw1/hw_1_7.json
