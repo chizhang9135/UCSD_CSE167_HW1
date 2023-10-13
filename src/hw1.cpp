@@ -338,8 +338,8 @@ Image3 hw_1_7(const std::vector<std::string> &params) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                            This is for lines and curve extra credit part                                         //
-//                   Do not supprt parsing. hard coding line and curve in to rendering                              //
+//                                   This is for lines and curve extra credit part
+//                         Do not support parsing. hard coding line and curve in to rendering
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct Line {
     Vector2 p0;            // Start point of the line
