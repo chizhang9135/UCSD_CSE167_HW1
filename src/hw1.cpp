@@ -337,6 +337,132 @@ Image3 hw_1_7(const std::vector<std::string> &params) {
     return hw_1_6(params);
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                            This is for lines and curve extra credit part                                         //
+//                   Do not supprt parsing. hard coding line and curve in to rendering                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct Line {
+    Vector2 p0;            // Start point of the line
+    Vector2 p1;            // End point of the line
+    Vector3 color;         // Color of the line
+    Real alpha;            // Transparency (0.0 is transparent, 1.0 is opaque)
+    Matrix3x3 transform;   // Transformation matrix
+};
+
+struct BezierCurve {
+    Vector2 p0;            // Start point of the curve
+    Vector2 p1;            // Control point 1
+    Vector2 p2;            // Control point 2
+    Vector2 p3;            // End point of the curve
+    Vector3 color;         // Color of the curve
+    Real alpha;            // Transparency (0.0 is transparent, 1.0 is opaque)
+    Matrix3x3 transform;   // Transformation matrix
+};
+
+bool is_near_line(const Vector2 &point, const Line &line, Real threshold = 2.0) {
+    // Project point onto line segment to find closest point on the segment
+    Vector2 AP = point - line.p0;
+    Vector2 AB = line.p1 - line.p0;
+    Real t = dot(AP, AB) / dot(AB, AB);
+    t = std::clamp(t, 0.0, 1.0);  // Clamping the value of t between 0 and 1
+    Vector2 closest = line.p0 + t * AB;
+
+    // Check if the distance between the point and closest point on segment is below threshold
+    return length(point - closest) < threshold;
+}
+
+Vector2 bezier_curve(const BezierCurve &curve, Real t) {
+    Real one_minus_t = 1 - t;
+    return one_minus_t*one_minus_t*one_minus_t*curve.p0 +
+           3*one_minus_t*one_minus_t*t*curve.p1 +
+           3*one_minus_t*t*t*curve.p2 +
+           t*t*t*curve.p3;
+}
+
+bool is_near_bezier_curve(const Vector2 &point, const BezierCurve &curve, Real threshold = 2.0) {
+    // We'll check various points on the Bezier curve and see if the point is close to any of them
+    const int N = 100;
+    for (int i = 0; i <= N; i++) {
+        Real t = (Real)i / N;
+        Vector2 curve_point = bezier_curve(curve, t);
+        if (length(point - curve_point) < threshold) {
+            return true;
+        }
+    }
+    return false;
+}
+
+Image3 hw_1_8() {
+    Image3 img(640, 480);
+    Vector3 background_color = {0.2, 0.2, 0.2};
+    int samples = 5;  // 5*5 sampling pattern
+
+    // Hardcoded shapes
+    Line line1 = {
+            {100, 100},
+            {540, 380},
+            {1.0, 0.0, 0.0},
+            1.0,
+            Matrix3x3::identity()
+    };
+
+    Line line2 = {
+            {540, 100},
+            {100, 380},
+            {0.0, 0.0, 1.0},
+            1.0,
+            Matrix3x3::identity()
+    };
+
+    BezierCurve curve1 = {
+            {150, 50}, {250, 150}, {400, 150}, {500, 50},
+            {0.0, 1.0, 0.0},
+            1.0,
+            Matrix3x3::identity()
+    };
+
+    BezierCurve curve2 = {
+            {150, 430}, {250, 330}, {400, 330}, {500, 430},
+            {1.0, 1.0, 0.0},
+            1.0,
+            Matrix3x3::identity()
+    };
+
+    std::vector<std::variant<Line, BezierCurve>> shapes = {line1, line2, curve1, curve2};
+
+    for (int y = 0; y < img.height; y++) {
+        for (int x = 0; x < img.width; x++) {
+            Vector3 accumulated_color = background_color;
+
+            // Anti-aliasing: sample each pixel multiple times
+            for (int i = 0; i < samples; i++) {
+                for (int j = 0; j < samples; j++) {
+                    Vector2 pixel_point(x + Real(i + 0.5) / samples, y + Real(j + 0.5) / samples);
+                    Vector3 sample_color = background_color;
+
+                    for (const auto& shape : shapes) {
+                        if (auto *line = std::get_if<Line>(&shape)) {
+                            if (is_near_line(pixel_point, *line)) {
+                                sample_color = line->color * line->alpha + (1 - line->alpha) * sample_color;
+                            }
+                        } else if (auto *curve = std::get_if<BezierCurve>(&shape)) {
+                            if (is_near_bezier_curve(pixel_point, *curve)) {
+                                sample_color = curve->color * curve->alpha + (1 - curve->alpha) * sample_color;
+                            }
+                        }
+                    }
+
+                    accumulated_color += sample_color;
+                }
+            }
+
+            accumulated_color /= Real(samples * samples); // Average the color for anti-aliasing
+            img(x, y) = accumulated_color;
+        }
+    }
+
+    return img;
+}
 
 
 
